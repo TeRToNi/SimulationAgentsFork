@@ -39,12 +39,12 @@ class Move(Task):
         self.coordinates[1] = self.target[1]
 
 class Eat(Task):
-    def __init__(self, coordinates, foodCoordinates):
+    def __init__(self, coordinates, foodCoordinates, bacteria):
         super().__init__()
 
         self.coordinates = coordinates
         self.foodCoordinates = foodCoordinates
-        #self.bacteria = bacteria
+        self.bacteria = bacteria
 
     def start(self):
         super().start()
