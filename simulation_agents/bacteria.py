@@ -5,7 +5,11 @@ from genes import Gene, GeneCluster
 from metrics import metric
 
 
-os.remove("logs/bacterias.log")
+try:
+    os.remove("logs/bacterias.log")
+except FileNotFoundError:
+    pass
+
 logger.add("logs/bacterias.log", format="{level}: {message}")
 
 

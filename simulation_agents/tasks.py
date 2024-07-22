@@ -6,7 +6,11 @@ import sys
 from metrics import metric
 
 
-os.remove("logs/tasks.log")
+try:
+    os.remove("logs/tasks.log")
+except FileNotFoundError:
+    pass
+
 logger.add("logs/tasks.log", format="{level}: {message}")
 
 

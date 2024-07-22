@@ -6,7 +6,11 @@ import tasks
 # from bacteria import Bacteria
 
 
-os.remove("logs/query.log")
+try:
+    os.remove("logs/query.log")
+except FileNotFoundError:
+    pass
+
 logger.add("logs/query.log", format="{level}: {message}")
 
 
