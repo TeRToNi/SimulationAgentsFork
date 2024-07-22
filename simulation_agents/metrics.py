@@ -4,7 +4,8 @@ from dataclasses import dataclass
 @dataclass
 class Metrics:
     tick: int
-    counter: int
+    tasksCounter: int
+    bacteriasCounter: int
 
 
-metric = Metrics(0, 0)
+metric = Metrics(0, 0, 0)

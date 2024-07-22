@@ -1,8 +1,9 @@
 from loguru import logger
-import numpy
 import os
+import time
 
 import tasks
+# from bacteria import Bacteria
 
 
 os.remove("logs/query.log")
@@ -10,48 +11,88 @@ logger.add("logs/query.log", format="{level}: {message}")
 
 
 class Query:
-    def __init__(self, coordinates):
+    def __init__(self, coordinates, foodCoordinates, waterCoordinates):
         logger.info("Query created")
         self.query = []
         self.coordinates = coordinates
+        self.foodCoordinates = foodCoordinates
+        self.waterCoordinates = waterCoordinates
 
     def addMoveTask(self, coordinates, target):
         self.query.append(tasks.Move(coordinates, target))
     def generatorMoveTasks(self, target, speed):
-        speed = speed / 100
+        speed = 1 / 100
 
-        c = numpy.array(self.coordinates)
-        t = numpy.array(target)
+        def tr_cash(func):
+            value = {}
 
-        def tr(value, n):
-            if value != 0:
-                return value / n
-            return 1
+            def wrapper(a):
+                if a in value:
+                    return value[a]
+                else:
+                    value[a] = func(a)
+                    return value[a]
 
-        def move(coordinate: numpy, targetCoords: numpy):
-            gh = list(coordinate)
-            x, y = (targetCoords - coordinate) / speed
+            return wrapper
+
+        @tr_cash
+        def tr(a):
+            return (a > 0) - (a < 0)
+
+        def cahe(func):
+            result = {}
+
+            def wrapper(*args):
+
+                if args in result:
+                    return result[args]
+
+                else:
+                    result[args] = func(*[list(x) for x in args])
+                    return result[args]
+
+            return wrapper
+
+        @cahe
+        def move(coordinate: list[int, int], target: list[int, int]):
+            x, y = (target[0] - coordinate[0]) / speed, (target[1] - coordinate[1]) / speed
             x, y = int(x), int(y)
             u, i = abs(x), abs(y)
-            j, k = tr(x, u), tr(y, i)
-            output = []
-            for l in range(max(u, i) - 1):
+            j, k = tr(x), tr(y)
+            w = min(u, i)
+            n = max(u, i)
+            f = {u: j, i: k}
+            result = []
+            qw, ew = f[n] * speed, f[w] * speed
+            for l in range(n):
                 if l < u:
-                    gh[0] += j * speed
-                if l < i:
-                    gh[1] += k * speed
-                yield gh.copy()
+                    coordinate[0] += qw
+                coordinate[1] += ew
+                result.append(coordinate.copy())
+            return result
 
-        for x in move(c, t):
-            self.addMoveTask(self.coordinates, [float(i) for i in x])
+        h = tuple(self.coordinates)
+        j = tuple(target)
+
+        d = move(h, j)
+        for i in d[:1]:
+            self.addMoveTask(self.coordinates, i)
         self.addMoveTask(self.coordinates, target)
-        for i in range(0, len(self.query)):
+        for i in range(1, len(self.query)):
             self.startTask()
 
     def addEatTask(self):
-        pass
+        self.query.append(tasks.Eat(self.coordinates, self.foodCoordinates))
+    def generatorEatTask(self):
+        self.addEatTask()
+        self.startTask()
+
+    def addWaterTask(self):
+        self.query.append(tasks.Eat(self.coordinates, self.waterCoordinates))
+    def generatorWaterTask(self):
+        self.addWaterTask()
+        self.startTask()
 
     def startTask(self):
         self.query[0].start()
         del self.query[0]
-

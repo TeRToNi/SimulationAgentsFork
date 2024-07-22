@@ -13,21 +13,13 @@ logger.add("logs/tasks.log", format="{level}: {message}")
 class Task:
     instances = {}
     def __init__(self):
-        Task.instances[self] = metric.counter
-        metric.counter += 1
+        Task.instances[self] = metric.tasksCounter
+        metric.tasksCounter += 1
         logger.info(f"{Task.instances[self]} task created")
 
     def start(self):
         logger.info(f"{Task.instances[self]} task started")
 
-
-    @staticmethod
-    def distance(cords, targetCoords):
-        return math.sqrt(cords[0] - targetCoords[0] ** 2 + cords[1] - targetCoords[1] ** 2)
-    @staticmethod
-    def vision(coordinates, targetCoords, visionArea):
-        if Task.distance(coordinates, targetCoords) <= visionArea: return True
-        else: return False
 
 class Move(Task):
     def __init__(self, coordinates, target):
@@ -35,7 +27,6 @@ class Move(Task):
 
         self.coordinates = coordinates
         self.target = target
-        self.distance = super().distance
 
     def start(self):
         super().start()
@@ -44,7 +35,30 @@ class Move(Task):
         self.coordinates[1] = self.target[1]
 
 class Eat(Task):
-    def __init__(self, coordinates):
+    def __init__(self, coordinates, foodCoordinates):
         super().__init__()
 
         self.coordinates = coordinates
+        self.foodCoordinates = foodCoordinates
+        #self.bacteria = bacteria
+
+    def start(self):
+        super().start()
+
+        if self.coordinates == self.foodCoordinates:
+            self.bacteria.hungry -= self.bacteria.foodCost
+
+class Drink(Task):
+    def __init__(self, coordinates, waterCoordinates, bacteria):
+        super().__init__()
+
+        self.coordinates = coordinates
+        self.waterCoordinates = waterCoordinates
+        self.bacteria = bacteria
+
+    def start(self):
+        super().start()
+
+        if self.coordinates == self.waterCoordinates:
+            self.bacteria.thirst -= self.bacteria.waterCost
+
