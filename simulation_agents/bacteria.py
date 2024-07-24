@@ -1,44 +1,55 @@
-from loguru import logger
-import os
-
-from genes import Gene, GeneCluster
-from metrics import metric
-
-
-try:
-    os.remove("logs/bacterias.log")
-except FileNotFoundError:
-    pass
-
-logger.add("logs/bacterias.log", format="{level}: {message}")
-
-
 class Entity:
     instances = {}
-    def __init__(self):
-        Entity.instances[self] = metric.tasksCounter
-        metric.tasksCounter += 1
-        logger.info(f"{Entity.instances[self]} bacteria created")
+    counter = 0
+    def __init__(self, dependencies, Logger):
+        self.logger: dependencies.Logger = Logger("logs/bacterias")
+
+        Entity.instances[self] = Entity.counter
+        Entity.counter += 1
+        self.logger.info(f"{Entity.instances[self]} bacteria created")
 
 class Bacteria(Entity):
-    def __init__(self, coordinates: list[int],
-                 foodCoordinates: list[int], foodCost: Gene,
-                 waterCoordinates: list[int], waterCost: Gene,
-                 visionDistance: Gene, speed: Gene):
-        super().__init__()
+    def __init__(self, dependencies, coordinates: list[int],
+                 foodCoordinates: list[list[int]], foodCost,
+                 waterCoordinates: list[list[int]], waterCost,
+                 visionDistance, speed):
+        super().__init__(dependencies, dependencies.Logger)
 
-        self.coordinates = coordinates
-        self.foodCoordinates = foodCoordinates
-        self.waterCoordinates = waterCoordinates
-        self.foodCost = foodCost
-        self.waterCost = waterCost
-        self.visionDistance = visionDistance
-        self.speed = speed
-        self.geneCluster = GeneCluster([foodCost, waterCost, visionDistance, speed])
-        self.hungry = 100
-        self.thirst = 100
+        self.coordinates: list[int] = coordinates
+        self.foodCoordinates: list[list[int]] = foodCoordinates
+        self.waterCoordinates: list[list[int]] = waterCoordinates
+        self.foodCost: dependencies.genes.Gene = foodCost
+        self.waterCost: dependencies.genes.Gene = waterCost
+        self.visionDistance: dependencies.genes.Gene = visionDistance
+        self.speed: dependencies.genes.Gene = speed
+        self.geneCluster = dependencies.genes.GeneCluster([foodCost, waterCost, visionDistance, speed])
+        self.hungry: int = 100
+        self.thirst: int = 100
+        self.need: int = 0
 
-    def __str__(self):
-        return ("Simulation Agents 1.9.0\n"
+        self.query: dependencies.Query = dependencies.Query(dependencies, self.coordinates,
+                                                            self.foodCoordinates, self.waterCoordinates, self)
+
+    def __str__(self) -> str:
+        return ("Simulation Agents 1.9.2\n"
                 "Type: Agent, bacteria")
 
+    def detectNeed(self) -> None:
+        import random
+
+        if len(self.query) == 0:
+            if self.hungry > self.thirst:
+                self.need = 0
+            elif self.thirst > self.hungry:
+                self.need = 1
+            else:
+                self.need = random.choice([0, 1])
+        else:
+            self.query.startTask()
+
+    def main(self) -> None:
+        match self.need:
+            case 0:
+                self.query.generatorEatTask()
+            case 1:
+                self.query.generatorWaterTask()
